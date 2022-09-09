@@ -47,7 +47,7 @@ function readArrInt(obj)::BigInt
 end
 
 
-function readR1CS(filename::String)::Tuple{Vector{R1CSEquation},Vector{Int64},Vector{Int64},Int64}
+function readR1CS(filename::String; compatible::Bool=false)::Tuple{Vector{R1CSEquation},Vector{Int64},Vector{Int64},Int64}
     arr = []
     fsize = stat(filename).size
     s = open(filename, "r")
@@ -59,7 +59,12 @@ function readR1CS(filename::String)::Tuple{Vector{R1CSEquation},Vector{Int64},Ve
     cur_idx = 9
     sections = readFour(arr[cur_idx:cur_idx+3])
     cur_idx += 4
-    @assert sections == 3
+    if !compatible
+        @assert sections == 3
+    else
+        # force to be 3 to avoid errors in logics followed
+        sections = 3
+    end
     section_starts = [0, 0, 0]
     #println("first part of arr ", arr[1:100])
     #println("mid arr ", arr[cur_idx:cur_idx+11])

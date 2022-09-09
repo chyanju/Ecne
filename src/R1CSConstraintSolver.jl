@@ -508,14 +508,16 @@ function solveWithTrustedFunctions(
     printRes::Bool=true,
     abstractionOnly::Bool=false,
     input_sym::String="",
-    secp_solve::Bool=false
+    secp_solve::Bool=false,
+    compatible::Bool=false,
+    silent::Bool=false,
 )
     a = Dates.now()
     @assert (length(trusted_r1cs) == length(trusted_r1cs_names))
-    equations_main, knowns_main, outs_main, num_variables = readR1CS(input_r1cs)
+    equations_main, knowns_main, outs_main, num_variables = readR1CS(input_r1cs, compatible=compatible)
     function_list = []
     for i = 1:length(trusted_r1cs)
-        equations_trusted, knowns_trusted, outs_trusted, _ = readR1CS(trusted_r1cs[i])
+        equations_trusted, knowns_trusted, outs_trusted, _ = readR1CS(trusted_r1cs[i], compatible=compatible)
         push!(
             function_list,
             (trusted_r1cs_names[i], equations_trusted, knowns_trusted, outs_trusted),
@@ -549,7 +551,7 @@ function solveWithTrustedFunctions(
     end
     b = Dates.now()
     println("time to prep inputs ", b - a)
-    result = SolveConstraintsSymbolic(reduced, specials, knowns_main, debug, outs_main, num_variables, input_sym, secp_solve)
+    result = SolveConstraintsSymbolic(reduced, specials, knowns_main, debug, outs_main, num_variables, input_sym, secp_solve, silent)
     if result == true
         if length(function_list) != 0
             if printRes
@@ -589,6 +591,7 @@ function SolveConstraintsSymbolic(
     num_variables::Int=-1,
     input_sym::String="default.sym",
     secp_solve::Bool=false,
+    silent::Bool=false,
 )
     time_begin_solve = Dates.now()
 
@@ -1595,51 +1598,53 @@ function SolveConstraintsSymbolic(
     if target_unique == length(target_variables)
         function_good = true
     end
-    ## in this case, we solved for all the target variables, which means that we're in good shape. 
-    println("------ Bad Constraints ------")
-    println()
-    ## parse sym file with csv reader
-    if input_sym != ""
-        csv_reader = CSV.File(input_sym; header=["i1", "i2", "i3", "signal"], skipto=0)
-        index_to_signal = String[]
-        for row in csv_reader
-            push!(index_to_signal, "$(row.signal)")
-        end
+    ## in this case, we solved for all the target variables, which means that we're in good shape.
+    if !silent
+        println("------ Bad Constraints ------")
+        println()
+        ## parse sym file with csv reader
+        if input_sym != ""
+            csv_reader = CSV.File(input_sym; header=["i1", "i2", "i3", "signal"], skipto=0)
+            index_to_signal = String[]
+            for row in csv_reader
+                push!(index_to_signal, "$(row.signal)")
+            end
 
-        for i = 1:length(constraints)
-            all_unique = true
-            for var in getVariables(constraints[i])
-                if !variable_states[var].unique
-                    all_unique = false
+            for i = 1:length(constraints)
+                all_unique = true
+                for var in getVariables(constraints[i])
+                    if !variable_states[var].unique
+                        all_unique = false
+                    end
                 end
-            end
-            if all_unique
-                continue
-            end
-            #if equation_solved[i]
-            #    continue
-            #end
-            #if !display_eq[i]
-            #    continue
-            #end
-            println("constraint #", i)
-            printEquation(constraints[i], index_to_signal)
-            for j in getVariables(constraints[i])
-                if j == 1
+                if all_unique
                     continue
                 end
-                println(index_to_signal[j-1])
-                printState(variable_states[j])
+                #if equation_solved[i]
+                #    continue
+                #end
+                #if !display_eq[i]
+                #    continue
+                #end
+                println("constraint #", i)
+                printEquation(constraints[i], index_to_signal)
+                for j in getVariables(constraints[i])
+                    if j == 1
+                        continue
+                    end
+                    println(index_to_signal[j-1])
+                    printState(variable_states[j])
+                end
             end
-        end
-        println("------ All Variables ------")
-        println()
-        for i in all_nontrivial_vars
-            if i == 1
-                continue
+            println("------ All Variables ------")
+            println()
+            for i in all_nontrivial_vars
+                if i == 1
+                    continue
+                end
+                println(index_to_signal[i-1])
+                printState(variable_states[i])
             end
-            println(index_to_signal[i-1])
-            printState(variable_states[i])
         end
     end
     return function_good

@@ -22,6 +22,12 @@ function main(args)
         required = true
         "--trusted"
         help = "Optional trusted R1CS file"
+        "--compatible"
+        help = "Ignore additional sections in r1cs (compatible with circom>=2.0.6). Note that this may create runtime/soundness issues if custom gates are required."
+        action = :store_true
+        "--silent"
+        help = "Do not print all the variable information when solving is done. Show the final conclusion directly."
+        action = :store_true
     end
 
     parsed_args = parse_args(args, s)
@@ -29,7 +35,7 @@ function main(args)
     #dict = Dict("result" => "empty", "constraints" => ["empty"])
 
     try
-        solveWithTrustedFunctions(parsed_args["r1cs"], parsed_args["name"], input_sym=parsed_args["sym"], debug=false)
+        solveWithTrustedFunctions(parsed_args["r1cs"], parsed_args["name"], input_sym=parsed_args["sym"], debug=false, compatible=parsed_args["compatible"], silent=parsed_args["silent"])
     catch e
         println("Error while running solveWithTrustedFunctions\n", e)
     end
