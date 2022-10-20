@@ -511,6 +511,7 @@ function solveWithTrustedFunctions(
     secp_solve::Bool=false,
     compatible::Bool=false,
     silent::Bool=false,
+    show_unique::Bool=false,
 )
     a = Dates.now()
     @assert (length(trusted_r1cs) == length(trusted_r1cs_names))
@@ -551,7 +552,7 @@ function solveWithTrustedFunctions(
     end
     b = Dates.now()
     println("time to prep inputs ", b - a)
-    result = SolveConstraintsSymbolic(reduced, specials, knowns_main, debug, outs_main, num_variables, input_sym, secp_solve, silent)
+    result = SolveConstraintsSymbolic(reduced, specials, knowns_main, debug, outs_main, num_variables, input_sym, secp_solve, silent, show_unique)
     if result == true
         if length(function_list) != 0
             if printRes
@@ -592,6 +593,7 @@ function SolveConstraintsSymbolic(
     input_sym::String="default.sym",
     secp_solve::Bool=false,
     silent::Bool=false,
+    show_unique::Bool=false,
 )
     time_begin_solve = Dates.now()
 
@@ -1646,6 +1648,18 @@ function SolveConstraintsSymbolic(
                 printState(variable_states[i])
             end
         end
+    end
+    if show_unique
+        unique_set = Set()
+        for i = 1:length(constraints)
+            for var in getVariables(constraints[i])
+                if variable_states[var].unique
+                    push!(unique_set, var-1)
+                    # println("# unique: ", var-1)
+                end
+            end
+        end
+        println("# unique_set: ", unique_set)
     end
     return function_good
 end

@@ -28,6 +28,9 @@ function main(args)
         "--silent"
         help = "Do not print all the variable information when solving is done. Show the final conclusion directly."
         action = :store_true
+        "--showunique"
+        help = "Show all unique tools deduced by the tool at the end of execution."
+        action = :store_true
     end
 
     parsed_args = parse_args(args, s)
@@ -35,7 +38,7 @@ function main(args)
     #dict = Dict("result" => "empty", "constraints" => ["empty"])
 
     try
-        solveWithTrustedFunctions(parsed_args["r1cs"], parsed_args["name"], input_sym=parsed_args["sym"], debug=false, compatible=parsed_args["compatible"], silent=parsed_args["silent"])
+        solveWithTrustedFunctions(parsed_args["r1cs"], parsed_args["name"], input_sym=parsed_args["sym"], debug=false, compatible=parsed_args["compatible"], silent=parsed_args["silent"], show_unique=parsed_args["showunique"])
     catch e
         println("Error while running solveWithTrustedFunctions\n", e)
     end
